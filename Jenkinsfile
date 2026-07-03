@@ -1,10 +1,7 @@
-def podmanImage = 'mcr.microsoft.com/dotnet/sdk:8.0'
-def inPodman(cmd) {
-    return "podman run --rm -e DOTNET_CLI_HOME=/tmp -v \$(pwd):/workspace -w /workspace ${podmanImage} bash -lc \"${cmd}\""
-}
-
 pipeline {
-    agent any
+    agent {
+      docker { image 'mcr.microsoft.com/dotnet/sdk:8.0' }
+    }
     environment {
         DOTNET_CLI_HOME = "/tmp"  // Requerida para el contenedor de dotnet
     }
@@ -15,22 +12,22 @@ pipeline {
     stages {
         stage('Restore') {
             steps {
-                sh inPodman('dotnet restore')
+                sh "dotnet restore"
             }
         }
         stage('Clean') {
             steps {
-                sh inPodman('dotnet clean')
+                sh "dotnet clean"
             }
         }
         stage('Compile') {
             steps {
-                sh inPodman('dotnet build')
+                sh "dotnet build"
             }
         }
         stage('Unit test') {
             steps {
-                sh inPodman('dotnet test --logger:junit')
+                sh "dotnet test --logger:junit"
             }
             post {
                 failure {
@@ -61,7 +58,7 @@ pipeline {
         // }
         stage('Release') {
             steps {
-                sh inPodman("dotnet build --configuration Release --property:Version=1.0.${currentBuild.number}")
+                sh "dotnet build --configuration Release --property:Version=1.0.${currentBuild.number}"
             }
              post {
                 success {
